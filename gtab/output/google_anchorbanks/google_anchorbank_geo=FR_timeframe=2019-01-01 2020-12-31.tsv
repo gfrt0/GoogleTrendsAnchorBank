@@ -1,5 +1,5 @@
 # {'GTAB': {'anchor_candidates_file': 'anchor_candidate_list.txt', 'num_anchor_candidates': 3500, 'num_anchors': 550, 'seed': 42, 'sleep': 0.5, 'thresh_offline': 10}}
-# {'PYTRENDS': {'geo': 'FR', 'timeframe': '2019-01-01 2020-12-31'}}
+# {'TRENDSPY': {'geo': 'FR', 'timeframe': '2019-01-01 2020-12-31'}}
 	google_query	max_ratio	max_ratio_lo	max_ratio_hi
 0	/m/02y1vz	6418.160366412061	5685.077221672711	7256.860103541445
 1	Amazon	3401.6249941983924	3041.5163135949006	3809.8515543592584

@@ -1,5 +1,5 @@
 # {'GTAB': {'anchor_candidates_file': 'anchor_candidate_list.txt', 'num_anchor_candidates': 3500, 'num_anchors': 550, 'seed': 42, 'sleep': 0.5, 'thresh_offline': 10}}
-# {'PYTRENDS': {'geo': 'KE', 'timeframe': '2019-01-01 2020-12-31'}}
+# {'TRENDSPY': {'geo': 'KE', 'timeframe': '2019-01-01 2020-12-31'}}
 	google_query	max_ratio	max_ratio_lo	max_ratio_hi
 0	/m/045c7b	1684.0600810814412	1518.3752764599967	1870.496030186783
 1	/m/0glpjll	471.5368227028036	432.736953791099	514.3864083013653

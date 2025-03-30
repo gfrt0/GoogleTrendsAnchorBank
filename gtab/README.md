@@ -18,7 +18,7 @@ or by calling `gtab-set-options` via the command line interface.
 
 - `CONN`
     - `backoff_factor`: see https://urllib3.readthedocs.io/en/latest/
-    - `proxies`: a list of proxy addresses (no proxies are used if the list is left empty)
+    - `proxy`: a list of proxy addresses (no proxies are used if the list is left empty)
     - `retries`: the maximum number of connection retries
     - `timeout`: see https://urllib3.readthedocs.io/en/latest/
 
@@ -29,7 +29,7 @@ or by calling `gtab-set-options` via the command line interface.
     - `seed`: random seed
     - `sleep`: number of seconds to wait between PyTrends API queries
 
-- `PYTRENDS` (for more details, see [pytrends documentation](https://github.com/GeneralMills/pytrends))
+- `TRENDSPY` (for more details, see [trendspy documentation](https://pypi.org/project/trendspy/))
     - `timeframe`: time period to use for Google Trends requests
     - `geo`: location to use for Google Trends requests - uses ISO two-letter country format, or "" (empty string) for global
 
@@ -46,7 +46,7 @@ Log files produced by G-TAB.
 
 The `output` folder contains a single subfolder `google_anchorbanks`.
 This is where the anchor banks are placed once they've been constructed (one file per anchor bank).
-Each file contains two header lines (starting with `#`) that specify the `PYTRENDS` and `GTAB` config options (see above) that were used when constructing the anchor bank.
+Each file contains two header lines (starting with `#`) that specify the `TRENDSPY` and `GTAB` config options (see above) that were used when constructing the anchor bank.
 The remaining lines specify the anchor bank:
 
 - `google_query`: the anchor query, specified via a language-agnostic Freebase ID (e.g., /m/0dm32) or via a language-specific plain-text query string (e.g., "sweet potato")

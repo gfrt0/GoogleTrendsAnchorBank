@@ -1,0 +1,74 @@
+
+2025-03-30 18:07:28.990354
+Start AnchorBank init for region  in timeframe 2004-01-01 2025-03-29...
+0/568 keyword candidates found in cache, 568 still to check.
+Sampling keywords...
+
+2025-03-30 18:09:24.250738
+Start AnchorBank init for region  in timeframe 2004-01-01 2025-03-29...
+Loading previously checked keywords from D:\Dropbox (Personal)\git\GoogleTrendsAnchorBank\gtab\data\internal\google_keywords\intermediate_google_keywords_geo=_timeframe=2004-01-01 2025-03-29.pkl.
+0/568 keyword candidates found in cache, 568 still to check.
+Sampling keywords...
+Querying google...
+Removing bad queries...
+Diagnostics done!
+A total of 121 bad keywords removed.
+Saving google results as 'D:\Dropbox (Personal)\git\GoogleTrendsAnchorBank\gtab\data\internal\google_results\google_results_geo=_timeframe=2004-01-01 2025-03-29.pkl'...
+Total queries (groups of 5 keywords): 453
+Finding paths...
+Paths done!
+Err: 4.884981308350689e-15
+Querying pairs...
+Total range: 6.37356481280403e-07
+Saving anchorbank as 'D:\Dropbox (Personal)\git\GoogleTrendsAnchorBank\gtab\output\google_anchorbanks\google_anchorbank_geo=_timeframe=2004-01-01 2025-03-29.tsv'...
+AnchorBank init done.
+
+2025-03-30 22:36:55.270930
+Using D:\Dropbox (Personal)\git\GoogleTrendsAnchorBank\gtab\output\google_anchorbanks\google_anchorbank_geo=_timeframe=2019-01-01 2020-08-01.tsv
+New query '/m/04j7cyf'
+New query calibrated!
+
+2025-03-30 22:37:15.985745
+Using D:\Dropbox (Personal)\git\GoogleTrendsAnchorBank\gtab\output\google_anchorbanks\google_anchorbank_geo=_timeframe=2019-01-01 2020-08-01.tsv
+New query '/m/01dyhm'
+New query calibrated!
+
+2025-03-30 22:37:33.185571
+Using D:\Dropbox (Personal)\git\GoogleTrendsAnchorBank\gtab\output\google_anchorbanks\google_anchorbank_geo=_timeframe=2019-01-01 2020-08-01.tsv
+New query '/m/01z7gs'
+New query calibrated!
+
+2025-03-30 22:37:49.891036
+Using D:\Dropbox (Personal)\git\GoogleTrendsAnchorBank\gtab\output\google_anchorbanks\google_anchorbank_geo=_timeframe=2019-01-01 2020-08-01.tsv
+New query '/m/0168s_'
+New query calibrated!
+
+2025-03-30 22:38:18.522789
+Using D:\Dropbox (Personal)\git\GoogleTrendsAnchorBank\gtab\output\google_anchorbanks\google_anchorbank_geo=_timeframe=2019-01-01 2020-08-01.tsv
+New query '/m/03xw0'
+New query calibrated!
+
+2025-03-30 22:38:48.745201
+Using D:\Dropbox (Personal)\git\GoogleTrendsAnchorBank\gtab\output\google_anchorbanks\google_anchorbank_geo=_timeframe=2004-01-01 2025-03-29.tsv
+New query '/m/04j7cyf'
+New query calibrated!
+
+2025-03-30 22:39:05.268043
+Using D:\Dropbox (Personal)\git\GoogleTrendsAnchorBank\gtab\output\google_anchorbanks\google_anchorbank_geo=_timeframe=2004-01-01 2025-03-29.tsv
+New query '/m/01dyhm'
+New query calibrated!
+
+2025-03-30 22:39:22.235783
+Using D:\Dropbox (Personal)\git\GoogleTrendsAnchorBank\gtab\output\google_anchorbanks\google_anchorbank_geo=_timeframe=2004-01-01 2025-03-29.tsv
+New query '/m/01z7gs'
+New query calibrated!
+
+2025-03-30 22:39:38.920487
+Using D:\Dropbox (Personal)\git\GoogleTrendsAnchorBank\gtab\output\google_anchorbanks\google_anchorbank_geo=_timeframe=2004-01-01 2025-03-29.tsv
+New query '/m/0168s_'
+New query calibrated!
+
+2025-03-30 22:40:13.886714
+Using D:\Dropbox (Personal)\git\GoogleTrendsAnchorBank\gtab\output\google_anchorbanks\google_anchorbank_geo=_timeframe=2004-01-01 2025-03-29.tsv
+New query '/m/03xw0'
+New query calibrated!

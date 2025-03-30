@@ -13,7 +13,7 @@ import warnings
 import networkx as nx
 import numpy as np
 import pandas as pd
-from pytrends.request import TrendReq
+import trendspy 
 from tqdm import tqdm
 
 
@@ -95,7 +95,13 @@ class GTAB:
         self.HITRAFFIC = self.CONFIG["HITRAFFIC"]
 
         self.active_gtab = None
-        self.pytrends = TrendReq(hl='en-US', **self.CONFIG['CONN'])
+
+        self.proxies = self.CONFIG['CONN']['proxies']
+        if len(self.CONFIG['CONN']['proxies']) > 0:
+            self.proxy = random.choice(self.proxies)
+            self.trendspy = trendspy.Trends(hl='en-US', proxy = {'https': self.proxy}, **self.CONFIG['CONN'])
+        else: 
+            self.trendspy = trendspy.Trends(hl='en-US', **self.CONFIG['CONN'])
 
         # sets default anchorbank
         if not self.from_cli:
@@ -111,51 +117,54 @@ class GTAB:
 
     def _make_file_suffix(self):
 
-        return "_".join([f"{k}={v}" for k, v in self.CONFIG['PYTRENDS'].items()
+        return "_".join([f"{k}={v}" for k, v in self.CONFIG['TRENDSPY'].items()
                          if not (k == "cat" and v == "0")]  # this if ensures compatibility with previous name formats,
                         # after we allow people to search for categories
                         )
 
     def _query_google(self, keywords=["Keywords"]):
-        time.sleep(self.CONFIG['GTAB']['sleep'])
+        
         if type(keywords) == str:
             keywords = [keywords]
-
         if len(keywords) > 5:
             raise ValueError("Number of keywords must be at most than 5.")
+        if len(keywords) == 2 and keywords[0] == keywords[1]: # avoids duplicate query
+            keywords = [keywords[0]]
 
-        # avoids duplicate query
-        if len(keywords) == 2 and keywords[0] == keywords[1]:
-            self.pytrends.build_payload(kw_list=[keywords[0]], **self.CONFIG['PYTRENDS'])
-            ret = self.pytrends.interest_over_time()
+        while True: 
+            try:
+                time.sleep(self.CONFIG['GTAB']['sleep'])
+         
+                if self.proxies: 
+                    self.proxy = random.choice(self.proxies)
+                    self.trendspy = trendspy.Trends(hl='en-US', proxy = {'https': self.proxy}, **self.CONFIG['CONN'])
+
+                ret = self.trendspy.interest_over_time(keywords = keywords, **self.CONFIG['TRENDSPY'])
+                break
+            except Exception as e: 
+                if self.proxies: 
+                    print(f"Removed proxy, remaining: {len(self.proxies)}")
+                    self.proxies.remove(self.proxy)
+
+                    if not self.proxies:
+                        input("All proxies exhausted. Change IP manually and press Enter to retry.")
+                else: 
+                    print("No proxies left. Retrying after a short delay...")
+                    time.sleep(10)
+                continue
+        
+        if len(keywords) == 2 and keywords[0] == keywords[1]: # avoids duplicate query
             ret.insert(loc=1, column="tmp", value=ret.iloc[:, 0])
-        else:
-            self.pytrends.build_payload(kw_list=keywords, **self.CONFIG['PYTRENDS'])
-            ret = self.pytrends.interest_over_time()
+        
         return ret
 
     def _is_not_blacklisted(self, keyword):
         return keyword not in self.CONFIG['BLACKLIST']
 
-    def _check_keyword(self, keyword, retry_on_429=False):
+    def _check_keyword(self, keyword):
         time.sleep(self.CONFIG['GTAB']['sleep'])
-        try:
-            rez = self._query_google(keywords=keyword)
-            return self._is_not_blacklisted(keyword) and not rez.empty
-        except ValueError as e:
-            raise e
-        except Exception as e:
-            if "response" in dir(e) and e.response is not None:
-                if e.response.status_code == 429:
-                    if retry_on_429:
-                        input("Quota reached! Please change IP and press enter to continue.")
-                        return self._check_keyword(keyword)
-                    else:
-                        raise ConnectionError("Code 429: Query limit reached on this IP!")
-                self._print_and_log(f"\nBad keyword '{keyword}', because {e}")
-            else:
-                raise e
-        return False
+        rez = self._query_google(keywords=keyword)
+        return self._is_not_blacklisted(keyword) and not rez.empty
 
     def _check_ts(self, ts):
         return ts.max() >= self.CONFIG['GTAB']['thresh_offline']
@@ -322,7 +331,7 @@ class GTAB:
                 self._print_and_log("Sampling keywords...")
                 for kw in tqdm(remaining_keywords, total=len(remaining_keywords)):
                     try:
-                        keywords_with_status[kw] = self._check_keyword(kw, retry_on_429=True)
+                        keywords_with_status[kw] = self._check_keyword(kw)
                     except Exception as e:
                         with open(fpath_intermediate_keywords, 'wb') as f_in:
                             pickle.dump(keywords_with_status, f_in, protocol=4)
@@ -358,22 +367,8 @@ class GTAB:
                 if cache_key in query_cache:
                     t_ret[i] = query_cache[cache_key]
                 else:
-                    try:
-                        df_query = self._query_google(keywords=kw_group).iloc[:, 0:5]
-                        query_cache[cache_key] = df_query
-                    except ValueError as e:
-                        with open(fpath_intermediate, 'wb') as f_out:
-                            pickle.dump(query_cache, f_out, protocol=4)
-                        raise e
-                    except Exception as e:
-                        with open(fpath_intermediate, 'wb') as f_out:
-                            pickle.dump(query_cache, f_out, protocol=4)
-                        if "response" in dir(e) and e.response is not None and e.response.status_code == 429:
-                            input("Quota reached! Please change IP and press enter to continue.")
-                            df_query = self._query_google(keywords=kw_group).iloc[:, 0:5]
-                            query_cache[cache_key] = df_query
-                        else:
-                            raise e
+                    df_query = self._query_google(keywords=kw_group).iloc[:, 0:5]
+                    query_cache[cache_key] = df_query 
                     t_ret[i] = df_query
 
             self._print_and_log("Removing bad queries...")
@@ -422,20 +417,7 @@ class GTAB:
                         if cache_key in query_cache:
                             ret[idx_new] = query_cache[cache_key]
                         else:
-                            try:
-                                df_query = self._query_google(keywords=kw_group).iloc[:, 0:5]
-                            except ValueError as e:
-                                with open(fpath_intermediate, 'wb') as f_out:
-                                    pickle.dump(query_cache, f_out, protocol=4)
-                                raise e
-                            except Exception as e:
-                                with open(fpath_intermediate, 'wb') as f_out:
-                                    pickle.dump(query_cache, f_out, protocol=4)
-                                if "response" in dir(e) and e.response is not None and e.response.status_code == 429:
-                                    input("Quota reached! Please change IP and press enter to continue.")
-                                    df_query = self._query_google(keywords=kw_group).iloc[:, 0:5]
-                                else:
-                                    raise e
+                            df_query = self._query_google(keywords=kw_group).iloc[:, 0:5]
                             query_cache[cache_key] = df_query
                             ret[idx_new] = df_query
                         idx_new += 1
@@ -652,13 +634,13 @@ class GTAB:
             print(f"Config file: {os.path.join(self.dir_path, 'config', 'config_py.json')}")
         print(self.CONFIG)
 
-    def set_options(self, pytrends_config=None, gtab_config=None, conn_config=None, overwite_file: bool = False):
+    def set_options(self, trendspy_config=None, gtab_config=None, conn_config=None, overwite_file: bool = False):
         """
         Overwrites specified options. This can also be done manually by editing 'config_py.json' in the active
         directory.
 
-            pytrends_config - a dictionary containing values to overrwite some of the configuration parameters for the
-            pytrends library when
+            trendspy_config - a dictionary containing values to overrwite some of the configuration parameters for the
+            trendspy library when
             building the payload. It consists of two parameters:
                 - geo (str) - containing the two-letter ISO code of the country, e.g. "US", or "" empty string
                     for global;
@@ -676,7 +658,7 @@ class GTAB:
             conn_config - a dictionary containing values to overrwite some of the configuration parameters for the
                 connection. It contains:
                     - backoff_factor (float) - e.g. 0.1;
-                    - proxies (list of strings) - which proxies to use,
+                    - proxies (list of strings) - which proxy to use,
                         e.g. ["https://50.2.15.109:8800", "https://50.2.15.1:8800"];
                     - retries (int) - how many times to retry connection;
                     - timeout (list of two values) - e.g. [25, 25]
@@ -684,13 +666,13 @@ class GTAB:
             overwrite_file - whether to overwrite the config_py.json file in the active directory.
             """
 
-        if pytrends_config is not None:
-            if type(pytrends_config) != dict:
-                raise TypeError("The pytrends_config argument must be a dictionary with valid parameters!")
-            for k in pytrends_config:
-                if k not in self.CONFIG['PYTRENDS']:
+        if trendspy_config is not None:
+            if type(trendspy_config) != dict:
+                raise TypeError("The trendspy_config argument must be a dictionary with valid parameters!")
+            for k in trendspy_config:
+                if k not in self.CONFIG['TRENDSPY']:
                     raise ValueError(f"Invalid parameter: {k}")
-                self.CONFIG["PYTRENDS"][k] = pytrends_config[k]
+                self.CONFIG["TRENDSPY"][k] = trendspy_config[k]
 
         if gtab_config is not None:
             if type(gtab_config) != dict:
@@ -710,8 +692,14 @@ class GTAB:
 
         # update objects whose state depends on config jsons
         self.CONFIG['CONN']['timeout'] = tuple(self.CONFIG['CONN']['timeout'])
-        self.pytrends = TrendReq(hl='en-US', **self.CONFIG['CONN'])
-
+        
+        self.proxies = self.CONFIG['CONN']['proxies']
+        if len(self.CONFIG['CONN']['proxies']) > 0:
+            self.proxy = random.choice(self.proxies)
+            self.trendspy = trendspy.Trends(hl='en-US', proxy = {'https': self.proxy }, **self.CONFIG['CONN'])
+        else: 
+            self.trendspy = trendspy.Trends(hl='en-US', **self.CONFIG['CONN'])
+        
         if overwite_file:
             if self.from_cli:
                 config_path = os.path.join(self.dir_path, "config", "config_cl.json")
@@ -842,8 +830,8 @@ class GTAB:
         # Set the options that are in a commented header in the GTAB file
         with open(self.active_gtab, "r") as f_in:
             t_gtab_config = ast.literal_eval(f_in.readline()[1:].strip())['GTAB']
-            t_pytrends_config = ast.literal_eval(f_in.readline()[1:].strip())['PYTRENDS']
-            self.set_options(pytrends_config=t_pytrends_config, gtab_config=t_gtab_config)
+            t_trendspy_config = ast.literal_eval(f_in.readline()[1:].strip())['TRENDSPY']
+            self.set_options(trendspy_config=t_trendspy_config, gtab_config=t_gtab_config)
 
         print(f"Active anchorbank changed to: {os.path.basename(self.active_gtab)}\n")
 
@@ -859,7 +847,7 @@ class GTAB:
 
         self._print_and_log(
         "Start AnchorBank init for region {} in timeframe {}...".format(
-            self.CONFIG['PYTRENDS']['geo'], self.CONFIG['PYTRENDS']['timeframe']
+            self.CONFIG['TRENDSPY']['geo'], self.CONFIG['TRENDSPY']['timeframe']
         ))
 
         if verbose:
@@ -924,9 +912,9 @@ class GTAB:
 
             with open(fname_base, 'w', newline='') as f_ab_out:  # 'w' vs 'a'?!
                 t_gtab_config = {"GTAB": self.CONFIG['GTAB']}
-                t_pytrends_config = {"PYTRENDS": self.CONFIG['PYTRENDS']}
+                t_trendspy_config = {"TRENDSPY": self.CONFIG['TRENDSPY']}
                 f_ab_out.write(f"# {t_gtab_config}\n")
-                f_ab_out.write(f"# {t_pytrends_config}\n")
+                f_ab_out.write(f"# {t_trendspy_config}\n")
                 anchor_bank_full.to_csv(f_ab_out, sep='\t', header=True)
 
             self._print_and_log("AnchorBank init done.")
@@ -940,7 +928,7 @@ class GTAB:
         self._log_con.close()
 
     def new_query(self, query, first_comparison=None, thresh=10, verbose=False, complete=False):
-        """ Request a new Google Trends query and calibrate it with the active gtab.  The 'PYTRENDS' key in
+        """ Request a new Google Trends query and calibrate it with the active gtab.  The 'TRENDSPY' key in
         config_py.json is used. Make sure to set it according to your chosen anchorbank!
 
         :param query: string containing a single query.
@@ -985,19 +973,8 @@ class GTAB:
             anchor = anchors[mid]
             if verbose:
                 self._print_and_log(f"\tQuery: '{query}'\tAnchor:'{anchor}'")
-            try:
-                ts = self._query_google(keywords=[anchor, query]).iloc[:, 0:2]
-            except ValueError as e:
-                raise e
-            except Exception as e:
-                if "response" in dir(e):
-                    if e.response.status_code == 429:
-                        input("Quota reached! Please change IP and press enter to continue.")
-                        ts = self._query_google(keywords=[anchor, query]).iloc[:, 0:2]
-                else:
-                    self._print_and_log(f"Google query '{query}' failed because: {str(e)}")
-                    break
-
+            ts = self._query_google(keywords=[anchor, query]).iloc[:, 0:2]
+            
             if anchor == query:
                 query = "tmp"
 
